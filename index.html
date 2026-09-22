@@ -80,6 +80,10 @@
         const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
         const language = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
         const action = searchParams.get('flow') || searchParams.get('type') || hashParams.get('flow') || hashParams.get('type') || '';
+        const errorCode = searchParams.get('error_code') || hashParams.get('error_code') || '';
+        const errorDescription = searchParams.get('error_description') || hashParams.get('error_description') || '';
+        const hasAuthError = Boolean(searchParams.get('error') || hashParams.get('error') || errorCode || errorDescription);
+        const isExpired = /expired|otp_expired|invalid/i.test(`${errorCode} ${errorDescription}`);
         const isRecovery = action === 'recovery' || action === 'reset-password';
         const appPath = isRecovery ? 'auth/reset-password' : 'auth/confirm';
         const appUrl = `idealist://${appPath}${query}${hash}`;
@@ -103,12 +107,23 @@
 
         // Do not leave auth tokens in the desktop browser address bar.
         window.history.replaceState({}, document.title, window.location.pathname);
-        title.textContent = isRecovery
-          ? (language === 'zh' ? '请在 Idealist App 中重置密码' : 'Continue in the Idealist App')
-          : (language === 'zh' ? '邮箱确认成功' : 'Email confirmed');
-        message.textContent = isRecovery
-          ? (language === 'zh' ? '请返回手机上的 Idealist App，继续完成密码重置。' : 'Return to the Idealist App on your phone to finish resetting your password.')
-          : (language === 'zh' ? '请在手机上的 Idealist App 登录。' : 'Please sign in to Idealist on your phone.');
+        if (hasAuthError) {
+          title.textContent = isRecovery
+            ? (language === 'zh' ? '密码重置链接已失效' : 'Password reset link expired')
+            : isExpired
+              ? (language === 'zh' ? '邮箱确认链接已失效' : 'Email confirmation link expired')
+              : (language === 'zh' ? '邮箱确认失败' : 'Email confirmation failed');
+          message.textContent = isRecovery
+            ? (language === 'zh' ? '请回到 Idealist App，重新获取密码重置邮件。' : 'Return to Idealist and request a new password reset email.')
+            : (language === 'zh' ? '请回到 Idealist App，重新获取验证邮件。' : 'Return to Idealist and request a new confirmation email.');
+        } else {
+          title.textContent = isRecovery
+            ? (language === 'zh' ? '请在 Idealist App 中重置密码' : 'Continue in the Idealist App')
+            : (language === 'zh' ? '邮箱确认成功' : 'Email confirmed');
+          message.textContent = isRecovery
+            ? (language === 'zh' ? '请返回手机上的 Idealist App，继续完成密码重置。' : 'Return to the Idealist App on your phone to finish resetting your password.')
+            : (language === 'zh' ? '请在手机上的 Idealist App 登录。' : 'Please sign in to Idealist on your phone.');
+        }
         secondary.textContent = language === 'zh' ? '你可以安全关闭此页面。' : 'You can safely close this page.';
       })();
     </script>

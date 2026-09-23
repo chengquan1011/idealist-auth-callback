@@ -80,9 +80,11 @@
         const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
         const language = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
         const action = searchParams.get('flow') || searchParams.get('type') || hashParams.get('flow') || hashParams.get('type') || '';
+        const tokenHash = searchParams.get('token_hash') || hashParams.get('token_hash') || '';
         const errorCode = searchParams.get('error_code') || hashParams.get('error_code') || '';
         const errorDescription = searchParams.get('error_description') || hashParams.get('error_description') || '';
         const hasAuthError = Boolean(searchParams.get('error') || hashParams.get('error') || errorCode || errorDescription);
+        const hasPendingToken = Boolean(tokenHash);
         const isExpired = /expired|otp_expired|invalid/i.test(`${errorCode} ${errorDescription}`);
         const isRecovery = action === 'recovery' || action === 'reset-password';
         const appPath = isRecovery ? 'auth/reset-password' : 'auth/confirm';
@@ -116,6 +118,17 @@
           message.textContent = isRecovery
             ? (language === 'zh' ? '请回到 Idealist App，重新获取密码重置邮件。' : 'Return to Idealist and request a new password reset email.')
             : (language === 'zh' ? '请回到 Idealist App，重新获取验证邮件。' : 'Return to Idealist and request a new confirmation email.');
+        } else if (hasPendingToken) {
+          title.textContent = isRecovery
+            ? (language === 'zh' ? '请在手机端重置密码' : 'Continue in the Idealist App')
+            : (language === 'zh' ? '请在手机端确认邮箱' : 'Continue in the Idealist App');
+          message.textContent = isRecovery
+            ? (language === 'zh'
+              ? '请在手机端点击邮件链接继续完成密码重置。此页面不会消耗链接。'
+              : 'Open this email link on your phone to continue resetting your password. This page does not consume the link.')
+            : (language === 'zh'
+              ? '请在手机端点击邮件链接完成邮箱确认。此页面不会消耗链接。'
+              : 'Open this email link on your phone to confirm your email. This page does not consume the link.');
         } else {
           title.textContent = isRecovery
             ? (language === 'zh' ? '请在 Idealist App 中重置密码' : 'Continue in the Idealist App')
